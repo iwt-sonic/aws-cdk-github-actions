@@ -11,7 +11,7 @@ function parseInputs(){
 }
 
 function installTypescript(){
-	npm install typescript
+	npm install -g ts-node
 }
 
 function installAwsCdk(){
@@ -63,11 +63,10 @@ function installPipRequirements(){
 function runCdk(){
 	echo "Run cdk ${INPUT_CDK_SUBCOMMAND} ${*} \"${INPUT_CDK_STACK}\""
 	set -o pipefail
-	cdk ${INPUT_CDK_SUBCOMMAND} ${*} "${INPUT_CDK_STACK}" 2>&1 | tee output.log
+	cdk ${INPUT_CDK_SUBCOMMAND} ${*} "${INPUT_CDK_STACK}"
 	exitCode=${?}
 	set +o pipefail
 	echo ::set-output name=status_code::${exitCode}
-	output=$(cat output.log)
 
 	commentStatus="Failed"
 	if [ "${exitCode}" == "0" ]; then
@@ -76,27 +75,10 @@ function runCdk(){
 		echo "CDK subcommand ${INPUT_CDK_SUBCOMMAND} for stack ${INPUT_CDK_STACK} has failed. See above console output for more details."
 		exit 1
 	fi
-
-	if [ "$GITHUB_EVENT_NAME" == "pull_request" ] && [ "${INPUT_ACTIONS_COMMENT}" == "true" ]; then
-		commentWrapper="#### \`cdk ${INPUT_CDK_SUBCOMMAND}\` ${commentStatus}
-<details><summary>Show Output</summary>
-
-\`\`\`
-${output}
-\`\`\`
-
-</details>
-
-*Workflow: \`${GITHUB_WORKFLOW}\`, Action: \`${GITHUB_ACTION}\`, Working Directory: \`${INPUT_WORKING_DIR}\`*"
-
-		payload=$(echo "${commentWrapper}" | jq -R --slurp '{body: .}')
-		commentsURL=$(cat ${GITHUB_EVENT_PATH} | jq -r .pull_request.comments_url)
-
-		echo "${payload}" | curl -s -S -H "Authorization: token ${GITHUB_TOKEN}" --header "Content-Type: application/json" --data @- "${commentsURL}" > /dev/null
-	fi
 }
 
 function main(){
+        node -v
 	parseInputs
 	cd ${GITHUB_WORKSPACE}/${INPUT_WORKING_DIR}
 	installTypescript
