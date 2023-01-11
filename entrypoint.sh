@@ -66,7 +66,7 @@ function runCdk(){
 	cdk ${INPUT_CDK_SUBCOMMAND} ${*} "${INPUT_CDK_STACK}"
 	exitCode=${?}
 	set +o pipefail
-	echo ::set-output name=status_code::${exitCode}
+	echo "status_code=${exitCode}" >> $GITHUB_OUTPUT
 
 	commentStatus="Failed"
 	if [ "${exitCode}" == "0" ]; then
